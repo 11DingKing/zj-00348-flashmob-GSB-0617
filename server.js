@@ -12,13 +12,26 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const db = new Database(path.join(__dirname, "data.db"));
 
+const OCCUPIED_STATUSES = ["待审核", "已选中"];
+const OCCUPIED_SQL = `SUM(CASE WHEN reg.status IN ('待审核', '已选中') THEN 1 ELSE 0 END) AS occupied_count`;
+
+function getRoleOccupiedCount(roleId) {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM registrations WHERE role_id = ? AND status IN (${OCCUPIED_STATUSES.map(() => "?").join(",")})`,
+    )
+    .get(roleId, ...OCCUPIED_STATUSES);
+  return row.c;
+}
+
 function getRoleStats(activityId) {
   const roles = db
     .prepare(
       `
     SELECT r.*,
       COUNT(reg.id) AS registered_count,
-      SUM(CASE WHEN reg.status = '已选中' THEN 1 ELSE 0 END) AS selected_count
+      SUM(CASE WHEN reg.status = '已选中' THEN 1 ELSE 0 END) AS selected_count,
+      ${OCCUPIED_SQL}
     FROM roles r
     LEFT JOIN registrations reg ON r.id = reg.role_id
     WHERE r.activity_id = ?
@@ -29,7 +42,7 @@ function getRoleStats(activityId) {
     .all(activityId);
   return roles.map((r) => ({
     ...r,
-    is_full: r.registered_count >= r.quota,
+    is_full: r.occupied_count >= r.quota,
   }));
 }
 
@@ -214,10 +227,8 @@ app.post("/api/registrations", (req, res) => {
     .prepare("SELECT * FROM roles WHERE id = ? AND activity_id = ?")
     .get(role_id, activity_id);
   if (!role) return res.status(404).json({ error: "角色不存在" });
-  const count = db
-    .prepare("SELECT COUNT(*) AS c FROM registrations WHERE role_id = ?")
-    .get(role_id).c;
-  if (count >= role.quota) {
+  const occupiedCount = getRoleOccupiedCount(role_id);
+  if (occupiedCount >= role.quota) {
     return res.status(400).json({ error: "该角色名额已满" });
   }
   const exist = db
@@ -473,7 +484,8 @@ app.get("/api/statistics/roles", (req, res) => {
       `
     SELECT r.*, a.title AS activity_title,
       COUNT(reg.id) AS reg_count,
-      SUM(CASE WHEN reg.status='已选中' THEN 1 ELSE 0 END) AS selected_count
+      SUM(CASE WHEN reg.status='已选中' THEN 1 ELSE 0 END) AS selected_count,
+      ${OCCUPIED_SQL}
     FROM roles r
     JOIN activities a ON r.activity_id = a.id
     LEFT JOIN registrations reg ON r.id = reg.role_id
@@ -491,7 +503,8 @@ app.get("/api/statistics/roles", (req, res) => {
           : "0%",
       fullRate:
         r.quota > 0
-          ? ((Math.min(r.reg_count, r.quota) / r.quota) * 100).toFixed(1) + "%"
+          ? ((Math.min(r.occupied_count, r.quota) / r.quota) * 100).toFixed(1) +
+            "%"
           : "0%",
     })),
   );
