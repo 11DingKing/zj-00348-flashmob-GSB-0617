@@ -12,6 +12,17 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const db = new Database(path.join(__dirname, "data.db"));
 
+const ACTIVE_STATUSES = ["待审核", "已选中"];
+const ACTIVE_STATUS_SQL = "reg.status IN ('待审核', '已选中')";
+
+function getActiveRegCount(roleId) {
+  return db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM registrations WHERE role_id = ? AND status IN ('待审核', '已选中')`,
+    )
+    .get(roleId).c;
+}
+
 function getRoleStats(activityId) {
   const roles = db
     .prepare(
@@ -20,7 +31,7 @@ function getRoleStats(activityId) {
       COUNT(reg.id) AS registered_count,
       SUM(CASE WHEN reg.status = '已选中' THEN 1 ELSE 0 END) AS selected_count
     FROM roles r
-    LEFT JOIN registrations reg ON r.id = reg.role_id
+    LEFT JOIN registrations reg ON r.id = reg.role_id AND ${ACTIVE_STATUS_SQL}
     WHERE r.activity_id = ?
     GROUP BY r.id
     ORDER BY r.id
@@ -214,9 +225,7 @@ app.post("/api/registrations", (req, res) => {
     .prepare("SELECT * FROM roles WHERE id = ? AND activity_id = ?")
     .get(role_id, activity_id);
   if (!role) return res.status(404).json({ error: "角色不存在" });
-  const count = db
-    .prepare("SELECT COUNT(*) AS c FROM registrations WHERE role_id = ?")
-    .get(role_id).c;
+  const count = getActiveRegCount(role_id);
   if (count >= role.quota) {
     return res.status(400).json({ error: "该角色名额已满" });
   }
@@ -473,6 +482,7 @@ app.get("/api/statistics/roles", (req, res) => {
       `
     SELECT r.*, a.title AS activity_title,
       COUNT(reg.id) AS reg_count,
+      SUM(CASE WHEN ${ACTIVE_STATUS_SQL} THEN 1 ELSE 0 END) AS active_count,
       SUM(CASE WHEN reg.status='已选中' THEN 1 ELSE 0 END) AS selected_count
     FROM roles r
     JOIN activities a ON r.activity_id = a.id
@@ -491,7 +501,8 @@ app.get("/api/statistics/roles", (req, res) => {
           : "0%",
       fullRate:
         r.quota > 0
-          ? ((Math.min(r.reg_count, r.quota) / r.quota) * 100).toFixed(1) + "%"
+          ? ((Math.min(r.active_count, r.quota) / r.quota) * 100).toFixed(1) +
+            "%"
           : "0%",
     })),
   );
