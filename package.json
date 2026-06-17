@@ -1,0 +1,15 @@
+{
+  "name": "flashmob-activity-system",
+  "version": "1.0.0",
+  "description": "红歌快闪活动报名编排系统",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "init-db": "node init-db.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "better-sqlite3": "^9.4.3",
+    "cors": "^2.8.5"
+  }
+}

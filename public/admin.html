@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>后台管理 - 红歌快闪活动系统</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="site-header admin-header">
+      <div class="container">
+        <h1>🎛 活动管理后台</h1>
+        <p class="subtitle">红歌快闪活动报名编排系统</p>
+        <nav class="admin-nav">
+          <a href="#" class="active" data-nav="dashboard">📊 概览</a>
+          <a href="#" data-nav="activities">📋 活动管理</a>
+          <a href="#" data-nav="reviews">✅ 报名审核</a>
+          <a href="#" data-nav="program">🎭 节目编排</a>
+          <a href="#" data-nav="statistics">📈 数据统计</a>
+          <a
+            href="/"
+            target="_blank"
+            style="margin-left: auto; background: rgba(255, 255, 255, 0.15)"
+            >🌐 群众端</a
+          >
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section id="nav-dashboard" class="nav-section active">
+        <h2 style="margin-bottom: 20px; color: #555">数据概览</h2>
+        <div id="dashboardStats" class="stats-grid"></div>
+        <div id="dashboardRecent"></div>
+      </section>
+
+      <section id="nav-activities" class="nav-section">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+          "
+        >
+          <h2 style="color: #555">活动管理</h2>
+          <button class="btn btn-primary" onclick="openActivityModal()">
+            + 发起新活动
+          </button>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>活动名称</th>
+              <th>主题</th>
+              <th>场地</th>
+              <th>场次</th>
+              <th>报名人数</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="activityTableBody"></tbody>
+        </table>
+      </section>
+
+      <section id="nav-reviews" class="nav-section">
+        <div style="margin-bottom: 20px">
+          <h2 style="color: #555; margin-bottom: 12px">报名审核</h2>
+          <div class="filter-bar">
+            <label>活动：</label>
+            <select id="reviewActivityFilter">
+              <option value="">全部活动</option>
+            </select>
+            <label style="margin-left: 16px">状态：</label>
+            <select id="reviewStatusFilter">
+              <option value="">全部</option>
+              <option value="待审核">待审核</option>
+              <option value="已选中">已选中</option>
+              <option value="未选中">未选中</option>
+            </select>
+            <label style="margin-left: 16px">角色：</label>
+            <select id="reviewRoleFilter">
+              <option value="">全部角色</option>
+            </select>
+          </div>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>姓名</th>
+              <th>手机号</th>
+              <th>活动</th>
+              <th>角色</th>
+              <th>报名时间</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="reviewTableBody"></tbody>
+        </table>
+      </section>
+
+      <section id="nav-program" class="nav-section">
+        <div style="margin-bottom: 20px">
+          <h2 style="color: #555; margin-bottom: 12px">节目编排</h2>
+          <div class="filter-bar">
+            <label>活动：</label>
+            <select id="programActivityFilter">
+              <option value="">请选择活动</option>
+            </select>
+          </div>
+        </div>
+        <div id="programContent"></div>
+      </section>
+
+      <section id="nav-statistics" class="nav-section">
+        <h2 style="margin-bottom: 20px; color: #555">数据统计</h2>
+        <div style="margin-bottom: 24px">
+          <h3
+            style="
+              font-size: 16px;
+              color: #555;
+              margin-bottom: 12px;
+              padding-left: 10px;
+              border-left: 3px solid #c0392b;
+            "
+          >
+            按活动统计
+          </h3>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>活动</th>
+                <th>主题</th>
+                <th>状态</th>
+                <th>场次</th>
+                <th>报名数</th>
+                <th>选中数</th>
+                <th>选中率</th>
+              </tr>
+            </thead>
+            <tbody id="statActivityBody"></tbody>
+          </table>
+        </div>
+        <div style="margin-bottom: 24px">
+          <h3
+            style="
+              font-size: 16px;
+              color: #555;
+              margin-bottom: 12px;
+              padding-left: 10px;
+              border-left: 3px solid #c0392b;
+            "
+          >
+            按角色统计
+          </h3>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>所属活动</th>
+                <th>角色</th>
+                <th>名额</th>
+                <th>报名数</th>
+                <th>报满率</th>
+                <th>选中数</th>
+                <th>选中率</th>
+              </tr>
+            </thead>
+            <tbody id="statRoleBody"></tbody>
+          </table>
+        </div>
+        <div>
+          <h3
+            style="
+              font-size: 16px;
+              color: #555;
+              margin-bottom: 12px;
+              padding-left: 10px;
+              border-left: 3px solid #c0392b;
+            "
+          >
+            按场次统计（上座率）
+          </h3>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>活动</th>
+                <th>场次时间</th>
+                <th>场地</th>
+                <th>节目数</th>
+                <th>应到演员</th>
+                <th>实到</th>
+                <th>上座率</th>
+              </tr>
+            </thead>
+            <tbody id="statSessionBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="activityModal" class="modal">
+      <div class="modal-content modal-xl">
+        <span class="close" onclick="closeModal('activityModal')">&times;</span>
+        <h2 id="activityModalTitle">发起新活动</h2>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>活动主题 *</label>
+            <input
+              type="text"
+              id="actTitle"
+              placeholder="例：庆祝建党105周年红歌快闪"
+            />
+          </div>
+          <div class="form-row">
+            <label>活动类型 *</label>
+            <select id="actTheme">
+              <option value="红歌快闪">红歌快闪</option>
+              <option value="情景宣讲">情景宣讲</option>
+              <option value="歌咏会">歌咏会</option>
+              <option value="情景剧">情景剧</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>主场地 *</label>
+          <input type="text" id="actVenue" placeholder="例：市人民广场" />
+        </div>
+        <div class="form-row">
+          <label>活动介绍</label>
+          <textarea id="actDesc" rows="3" placeholder="活动介绍..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <label>场次安排</label>
+          <div id="sessionList" class="dynamic-list"></div>
+          <span class="add-item-link" onclick="addSessionItem()"
+            >+ 添加场次</span
+          >
+        </div>
+
+        <div class="form-row">
+          <label>招募角色及名额</label>
+          <div id="roleList" class="dynamic-list"></div>
+          <span class="add-item-link" onclick="addRoleItem()">+ 添加角色</span>
+        </div>
+
+        <div style="text-align: right; margin-top: 20px">
+          <button class="btn btn-default" onclick="closeModal('activityModal')">
+            取消
+          </button>
+          <button class="btn btn-primary" onclick="saveActivity()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="reviewModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('reviewModal')">&times;</span>
+        <h2>审核报名</h2>
+        <div id="reviewInfo" style="margin-bottom: 16px"></div>
+        <div class="form-row">
+          <label>审核结果</label>
+          <select id="reviewStatus">
+            <option value="待审核">待审核</option>
+            <option value="已选中">已选中</option>
+            <option value="未选中">未选中</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>备注</label>
+          <textarea
+            id="reviewRemark"
+            rows="3"
+            placeholder="审核备注..."
+          ></textarea>
+        </div>
+        <div style="text-align: right; margin-top: 16px">
+          <button class="btn btn-default" onclick="closeModal('reviewModal')">
+            取消
+          </button>
+          <button class="btn btn-primary" onclick="submitReview()">确认</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="perfModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('perfModal')">&times;</span>
+        <h2 id="perfModalTitle">添加节目</h2>
+        <div class="form-row">
+          <label>节目名称 *</label>
+          <input type="text" id="perfName" placeholder="例：合唱：歌唱祖国" />
+        </div>
+        <div class="form-row">
+          <label>出场顺序</label>
+          <input type="number" id="perfOrder" value="1" min="1" />
+        </div>
+        <div class="form-row">
+          <label>关联角色</label>
+          <select id="perfRole">
+            <option value="">不关联</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>说明</label>
+          <textarea id="perfDesc" rows="2"></textarea>
+        </div>
+        <div style="text-align: right; margin-top: 16px">
+          <button class="btn btn-default" onclick="closeModal('perfModal')">
+            取消
+          </button>
+          <button class="btn btn-primary" onclick="savePerformance()">
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>
